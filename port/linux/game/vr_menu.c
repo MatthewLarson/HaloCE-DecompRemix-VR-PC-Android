@@ -413,6 +413,11 @@ static struct vr_menu_setting const vr_menu_controls[] =
 	reload and magazine release on the gun's controller); bindings stay */
 	{ "MIRROR BUTTONS", "vr.mirror_buttons", _vr_setting_string, 2, { { "AUTO", "auto" }, { "OFF", "off" } } },
 	VR_MENU_TURNING_ROW,
+	/* the Omni One treadmill: on foot only, never a vehicle */
+	{ "OMNI ONE", "vr.omni_treadmill", _vr_setting_boolean, 2, { { "OFF", "false" }, { "ON", "true" } } },
+	{ "OMNI YAW", "vr.omni_yaw", _vr_setting_string, 2, { { "STANDARD", "standard" }, { "REVERSED", "reversed" } } },
+	{ "OMNI SPEED", "vr.omni_speed", _vr_setting_real, 7, { { "50%", "0.5" }, { "75%", "0.75" }, { "100%", "1.0" }, { "125%", "1.25" }, { "150%", "1.5" }, { "175%", "1.75" }, { "200%", "2.0" } } },
+	{ "OMNI DEADZONE", "vr.omni_deadzone", _vr_setting_real, 6, { { "0%", "0.0" }, { "5%", "0.05" }, { "10%", "0.1" }, { "15%", "0.15" }, { "20%", "0.2" }, { "30%", "0.3" } } },
 	{ "MOVE WITH", "vr.move_relative", _vr_setting_string, 3, { { "HEAD", "head" }, { "LEFT HAND", "left" }, { "RIGHT HAND", "right" } } },
 	/* test21: AUTO LOCK (default) locks the off hand at the support grip
 	without squeezing; SQUEEZE needs the grip held there */

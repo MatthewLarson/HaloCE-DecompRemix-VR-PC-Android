@@ -1223,6 +1223,18 @@ static const struct config_setting config_settings[] =
 	{ "vr.move_relative", _config_string, "\"head\"", "HALO_VR_MOVE_RELATIVE", _environment_value, _platform_vr,
 		"What the move stick moves you relative to: \"head\", or where the\n"
 		"\"left\" or \"right\" controller points." },
+	{ "vr.omni_treadmill", _config_boolean, "false", "HALO_VR_OMNI_TREADMILL", _environment_value, _platform_vr,
+		"Virtuix Omni One treadmill: its walking (Omni Connect presents it as the left\n"
+		"controller's move stick) is shaped by vr.omni_deadzone and vr.omni_speed, and walking\n"
+		"about the room (vr.roomscale) and the arms' run are left off. On foot only: vehicles,\n"
+		"seats and cutscenes are never changed by it." },
+	{ "vr.omni_yaw", _config_string, "\"standard\"", "HALO_VR_OMNI_YAW", _environment_value, _platform_vr,
+		"Omni One treadmill: which way the head's yaw is given to Omni Connect, \"standard\" or \"reversed\" (try\n"
+		"it if the treadmill's forward turns the wrong way when you turn your head)." },
+	{ "vr.omni_deadzone", _config_real, "0.1", "HALO_VR_OMNI_DEADZONE", _environment_value, _platform_vr,
+		"Omni One treadmill: the move stick's dead zone, 0 to 0.5 (steps below it are ignored)." },
+	{ "vr.omni_speed", _config_real, "1.0", "HALO_VR_OMNI_SPEED", _environment_value, _platform_vr,
+		"Omni One treadmill: on-foot movement speed scale, 0.25 to 2 (1 as the stick gives it)." },
 	{ "vr.third_person", _config_boolean, "false", "HALO_VR_THIRD_PERSON", _environment_value, _platform_vr,
 		"Test72: THIRD PERSON: on foot in a campaign or co-op (not multiplayer), the view from behind you\n"
 		"over your shoulder, turning with the stick; the head aims at what it looks at, the buttons do the\n"

@@ -13,7 +13,11 @@
          its broker or the system's active_runtime.json -->
     <uses-permission android:name="org.khronos.openxr.permission.OPENXR" />
     <uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM" />
+    <!-- Virtuix Omni One treadmill: Omni Connect's bound service (OmniOne.java), which Android 11+ shows an
+         app only when it is named here -->
+    <uses-permission android:name="com.virtuix.omniconnect.BIND_SERVICE" />
     <queries>
+        <package android:name="com.virtuix.omniconnect" />
         <provider android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
         <intent>
             <action android:name="org.khronos.openxr.OpenXRRuntimeService" />

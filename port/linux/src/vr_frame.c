@@ -174,6 +174,12 @@ static struct
 	double view_held;
 	int view_recentred, back_pulse, zoom_down;
 	int move_relative; /* 0 head, 1 left hand, 2 right hand */
+	/* vr.omni_treadmill: a Virtuix Omni One (its Omni Connect makes the treadmill a
+	controller's move stick); on foot only, its stick is dead-zoned and scaled
+	(vr.omni_deadzone, vr.omni_speed), and walking about the room and the arms'
+	run are left off, the treadmill being the walking */
+	int omni, omni_state, omni_yaw_reversed;
+	float omni_deadzone, omni_speed, omni_move[3];
 	/* the hand that holds the weapon (vr.left_handed; swapped by bringing
 	the palms together and gripping) */
 	int weapon_hand;
@@ -846,6 +852,14 @@ void vr_reload_settings(void)
 	platform_log("vr: native crosshair %s size %.2f opacity %.2f (menu pointer independent)",
 		vr.crosshair_enabled ? "on" : "off", vr.crosshair_size, vr.crosshair_opacity);
 	vr.layout_vr = strcmp(config_string("vr.controls"), "pad") != 0;
+	vr.omni = config_boolean("vr.omni_treadmill");
+	vr.omni_yaw_reversed = !strcmp(config_string("vr.omni_yaw"), "reversed");
+	vr.omni_deadzone = (float)config_real("vr.omni_deadzone");
+	if (!isfinite(vr.omni_deadzone)) vr.omni_deadzone = 0.1f;
+	vr.omni_deadzone = fminf(0.5f, fmaxf(0.0f, vr.omni_deadzone));
+	vr.omni_speed = (float)config_real("vr.omni_speed");
+	if (!isfinite(vr.omni_speed)) vr.omni_speed = 1.0f;
+	vr.omni_speed = fminf(2.0f, fmaxf(0.25f, vr.omni_speed));
 	vr.move_relative = !strcmp(config_string("vr.move_relative"), "left") ? 1 :
 		!strcmp(config_string("vr.move_relative"), "right") ? 2 : 0;
 	{
@@ -3232,10 +3246,36 @@ int vr_controller(unsigned int *buttons, float trigger[2], float thumb[4])
 			*buttons &= ~(HALO_XR_BUTTON_LEFT_THUMB | HALO_XR_BUTTON_RIGHT_THUMB);
 		}
 	}
+	/* the Omni One treadmill (vr.omni_treadmill): on foot only (a vehicle's seat
+	keeps its stick as it is), its walking (Omni Connect's, head-relative as the
+	stick is) in place of the move stick when it is moving more, dead-zoned,
+	scaled, and the arms' run off */
+	if (vr.omni && vr.aiming_last_frame && !vr.seated)
+	{
+		float length;
+
+		if ((vr.omni_state & 2) && vr.omni_move[0] * vr.omni_move[0] + vr.omni_move[1] * vr.omni_move[1] >
+			thumb[0] * thumb[0] + thumb[1] * thumb[1])
+		{
+			thumb[0] = vr.omni_move[0];
+			thumb[1] = vr.omni_move[1];
+		}
+		length = sqrtf(thumb[0] * thumb[0] + thumb[1] * thumb[1]);
+
+		if (length <= vr.omni_deadzone)
+			thumb[0] = thumb[1] = 0.0f;
+		else
+		{
+			float scaled = fminf(1.0f, (length - vr.omni_deadzone) / (1.0f - vr.omni_deadzone) * vr.omni_speed);
+
+			thumb[0] *= scaled / length;
+			thumb[1] *= scaled / length;
+		}
+	}
 	/* the arms' run (vr.arm_run) pushes the stick ahead, on foot */
 	/* Deliberate stick movement always wins, including backing away while
 	gripping. Hand motion must not turn a backward input into forward motion. */
-		if (vr.run_push > 0.0f && vr.aiming_last_frame && !vr.seated &&
+		if (!vr.omni && vr.run_push > 0.0f && vr.aiming_last_frame && !vr.seated &&
 		fabsf(thumb[0]) < 0.15f && fabsf(thumb[1]) < 0.15f)
 		thumb[1] = vr.run_push;
 	if (vr.aiming_last_frame && !vr.seated)
@@ -3314,6 +3354,11 @@ static int frame_begin(void)
 		vr.frame.thumb[3] = move[1];
 	}
 	layout_controls();
+	/* the Omni One treadmill (host_omni.c): Omni Connect wants the head's yaw as Unity has it, clockwise
+	from above positive; Halo's turns the other way (vr.omni_yaw "reversed" for a treadmill that
+	turns the wrong way) */
+	vr.omni_state = host_omni_poll(vr.omni, vr.head_yaw * (vr.omni_yaw_reversed ? 57.29578f : -57.29578f),
+		vr.omni_move);
     /* Once per freshly acquired frame, before gestures/weapon rays/IK. Never
      * accumulate corrections on the previous corrected frame. */
     {
@@ -3741,7 +3786,7 @@ int vr_room_step(float out_step[2])
 	const float *head = vr.frame.head.position;
 
 	out_step[0] = out_step[1] = 0.0f;
-	if (!vr.roomscale || !vr.active || !vr.heading_valid || vr.vehicle_seat.recentre_pending ||
+	if (!vr.roomscale || vr.omni || !vr.active || !vr.heading_valid || vr.vehicle_seat.recentre_pending ||
 		(vr.frame.flags & (HALO_XR_FRAME_VIEWS_VALID | HALO_XR_FRAME_RECENTRED)) != HALO_XR_FRAME_VIEWS_VALID)
 	{
 		vr_room_hold();
@@ -4399,7 +4444,7 @@ int vr_aim(float game_yaw, int seated, int hand_may_aim, const float *base_headi
 	{
 		float move = comfort_stick(vr.frame.thumb[0], vr.frame.thumb[1]);
 
-		if (!seated && vr.run_push > move)
+		if (!seated && !vr.omni && vr.run_push > move)
 			move = vr.run_push > 1.0f ? 1.0f : vr.run_push;
 		vr.comfort_move = move;
 		if (seated || base_heading)

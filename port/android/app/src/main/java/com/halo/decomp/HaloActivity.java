@@ -166,6 +166,10 @@ public class HaloActivity extends SDLActivity implements TouchControls.LayoutTra
     /** Called once by SDL's native main; ownership of the duplicate passes to C. */
     public int openGameLog() { return RunLog.nativeDescriptor(); }
 
+    // the Omni One treadmill (host_omni.c asks, once vr.omni_treadmill is on or off)
+    public void omniStart() { OmniOne.start(this); }
+    public void omniStop() { OmniOne.stop(); }
+
     /** Native normal exit runs on the game thread; give withdrawal a bounded chance before _exit. */
     public void prepareGameExit() {
         if (pvpPublisher != null) pvpPublisher.closeBeforeNativeExit();
